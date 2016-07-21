@@ -26,7 +26,6 @@ public class Parser {
     }
 //region static methods
 
-
 // endregion
 //region Tag element methods
 
@@ -59,6 +58,33 @@ public class Parser {
             lookForHtmlTags(source.toString());
         } catch (FileNotFoundException ex) {
             System.out.println("File not found");
+        }
+    }
+
+    /**
+     * prints out the template representing only the HTML elements returned from the passed in file
+     *
+     * @return String represent the HTML tag template of a page
+     */
+    public String PrintHtmlTagTemplate() {
+        if (tags.isEmpty()) {
+            return "";
+        } else {
+            StringBuilder currentTemplate = new StringBuilder();
+            int currentLine = 1;
+            for (int i = 0; i < tags.size(); i++) {
+                if (i == 0) {
+                    currentTemplate.append("Line " + tags.get(i).getLineNumber() + ": " + tags.get(i).toString());
+                } else if (tags.get(i).getLineNumber() > currentLine) {
+                    currentTemplate.append("\n");
+                    currentTemplate.append("Line " + tags.get(i).getLineNumber() + ": " + tags.get(i).toString());
+                    currentLine++;
+                } else {
+                    currentTemplate.append(tags.get(i).toString());
+                }
+
+            }
+            return currentTemplate.toString();
         }
     }
 
@@ -172,7 +198,10 @@ public class Parser {
                     //if an Attribute starts with a ' character but contains " characters they are ignored
                     //if the next character is a space ensure that there is no comma indicating that it is a multipart Attribute value
                     if ((tag.charAt(v) == '\"' && !startsWithSingleQuote) || tag.charAt(v) == '\'' || (tag.charAt(v) == ' ' && (tag.charAt(v - 1) != ','))) {
-                        attValueEnd = v;
+                        if(tag.charAt(v)==' '){
+                            v=checkForFullString(tag,v);
+                        }
+                        attValueEnd=v;
                         attributes.add(new Attribute(tag.substring(attNameStart, attNameEnd),
                             tag.substring(attValueStart, attValueEnd + 1)));
                         attNameStart = 0;
@@ -189,6 +218,34 @@ public class Parser {
             }
         }
         return attributes;
+    }
+
+    /**
+     * If an Attributes value is a string that contains spaces, ensure that the space is not interpreted as a missing quotation mark
+     * @param tag
+     * @param startingIndex
+     * @return
+     */
+    private int checkForFullString(String tag, int startingIndex){
+        int fullString=startingIndex;
+        int lastIndexOfSpace = 0;
+        boolean foundNewAssignment;
+        while(fullString<tag.length()) {
+            if(tag.charAt(fullString)==' '){
+                lastIndexOfSpace=fullString;
+            }else if(tag.charAt(fullString) == '='){
+                fullString=lastIndexOfSpace;
+                break;
+            }else if(fullString==tag.length()-1){
+                fullString--;
+                break;
+            }else if(tag.charAt(fullString)=='\'' || tag.charAt(fullString)=='"'){
+                break;
+            }
+            fullString++;
+        }
+        return fullString;
+
     }
 
     /**
